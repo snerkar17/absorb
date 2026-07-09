@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absorb — your topic map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Hanken+Grotesk:wght@400;500;600&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F4F4F0;--card:#FFFFFF;--ink:#1B1E19;--muted:#8E908A;--faint:#B9BAB4;
+    --line:#E6E6DF;--line-soft:#EFEFEA;--accent:#5C6E4A;--accent-deep:#465739;--highlight:#E7EFD2;
+    --shadow:0 1px 2px rgba(27,30,25,.04),0 8px 24px rgba(27,30,25,.06);
+    --shadow-lift:0 2px 6px rgba(27,30,25,.06),0 24px 60px rgba(27,30,25,.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:"Hanken Grotesk",system-ui,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.5}
+  .mono{font-family:"Spline Sans Mono",monospace}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  .app{max-width:1000px;margin:0 auto;padding:0 28px}
+  header.bar{display:flex;align-items:center;justify-content:space-between;padding:26px 0 18px}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand .mark{font-family:"Fraunces",serif;font-weight:600;font-size:24px;letter-spacing:-.02em}
+  .brand .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block;transform:translateY(-2px)}
+  .brand .sub{font-size:12px;color:var(--muted);letter-spacing:.04em}
+  .streak{font-size:12px;color:var(--accent);display:flex;align-items:center;gap:8px;border:1px solid var(--accent);border-radius:999px;padding:7px 14px;background:#FBFCF6}
+  .streak b{font-weight:600}
+
+  .ghead{display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:14px;margin:10px 0 6px}
+  .ghead h1{font-family:"Fraunces",serif;font-weight:500;font-size:32px;letter-spacing:-.025em;line-height:1.05}
+  .ghead .gsub{color:var(--muted);font-size:14px;margin-top:6px;max-width:440px}
+  .toggle{display:inline-flex;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px}
+  .toggle button{font-size:13px;padding:8px 16px;border-radius:999px;color:var(--muted);transition:.2s;white-space:nowrap}
+  .toggle button.on{background:var(--ink);color:#fff}
+
+  .stats{display:flex;gap:22px;margin:14px 0 14px;flex-wrap:wrap}
+  .stat{display:flex;flex-direction:column}
+  .stat .v{font-family:"Fraunces",serif;font-size:24px;font-weight:500;line-height:1}
+  .stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-top:5px}
+
+  .gwrap{position:relative;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+  #svg{display:block;width:100%;height:auto;touch-action:none;cursor:grab}
+  .tooltip{position:absolute;pointer-events:none;background:var(--ink);color:#fff;font-size:12.5px;line-height:1.45;padding:10px 13px;border-radius:10px;max-width:240px;opacity:0;transition:opacity .15s;z-index:10;box-shadow:var(--shadow-lift)}
+  .tooltip b{font-weight:600}
+  .tooltip .tt-sub{font-family:"Spline Sans Mono",monospace;font-size:10.5px;opacity:.72;margin-top:5px;display:block}
+
+  .legend{display:flex;flex-wrap:wrap;gap:14px 22px;padding:16px 4px 4px;align-items:center}
+  .legend .lg{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--muted)}
+  .legend .b1{width:12px;height:12px;border-radius:50%;background:var(--accent)}
+  .legend .b2{width:22px;height:22px;border-radius:50%;background:var(--accent);opacity:.55}
+  .caption{display:flex;gap:14px;align-items:flex-start;background:#FBFCF6;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:16px 0 10px}
+  .caption .ci{width:30px;height:30px;border-radius:8px;background:var(--highlight);color:var(--accent-deep);display:flex;align-items:center;justify-content:center;flex:none;font-size:15px}
+  .caption .ct{font-size:13.5px;color:#3a3d36}.caption .ct b{color:var(--ink)}
+  .foot{font-size:12.5px;color:var(--muted);margin:8px 0 50px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="bar">
+    <div class="brand"><span class="mark">Absorb<span class="dot"></span></span><span class="sub">your topic map</span></div>
+    <div class="streak mono"><span>🌿</span><b>21</b>&nbsp;days logged</div>
+  </header>
+
+  <div class="ghead">
+    <div>
+      <h1>What your mind keeps circling</h1>
+      <p class="gsub">Each bubble is a topic — bigger means you've logged more about it. Thicker lines mean two topics keep showing up together.</p>
+    </div>
+    <div class="toggle">
+      <button id="tDay" class="on" onclick="setMode('day')">Same day</button>
+      <button id="tWeek" onclick="setMode('week')">Same week</button>
+    </div>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="gwrap">
+    <svg id="svg" viewBox="0 0 820 560" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="tooltip" id="tip"></div>
+  </div>
+
+  <div class="legend" id="legend"></div>
+  <div class="caption">
+    <div class="ci">◍</div>
+    <div class="ct" id="caption"></div>
+  </div>
+  <div class="foot">All deterministic — bubble size is a note count, line thickness is a co-occurrence count. No AI anywhere. Drag a bubble to explore.</div>
+</div>
+
+<script>
+/* ===== categories ===== */
+const CAT={
+  science:{name:'Science',c:'#3E6B57'},
+  history:{name:'History',c:'#8A6B47'},
+  language:{name:'Language',c:'#4E5E86'},
+  money:{name:'Money',c:'#5C6E4A'},
+  tech:{name:'Tech',c:'#3E6675'},
+  health:{name:'Health',c:'#8A5A55'},
+  idea:{name:'Idea',c:'#897A3C'},
+  nature:{name:'Nature',c:'#4A6B4A'}
+};
+
+/* ===== deterministic seed: ~21 days of notes (cat, day) ===== */
+/* affinity pairs make some lines genuinely thicker */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+const rng=mulberry32(7);
+const PAIRS=[['science','health',4],['money','idea',3],['tech','idea',2],['history','language',2],['science','nature',2],['health','idea',1]];
+const pairBag=[];PAIRS.forEach(([a,b,w])=>{for(let i=0;i<w;i++)pairBag.push([a,b]);});
+const ALL=Object.keys(CAT);
+const NOTES=[]; const DAYS=21;
+for(let d=1;d<=DAYS;d++){
+  const todays=new Set();
+  if(rng()<0.15){ todays.add(ALL[Math.floor(rng()*ALL.length)]); }      // occasional solo day
+  else{
+    const [a,b]=pairBag[Math.floor(rng()*pairBag.length)];todays.add(a);todays.add(b);
+    if(rng()<0.4) todays.add(ALL[Math.floor(rng()*ALL.length)]);        // sometimes a third topic
+  }
+  todays.forEach(cat=>{ const n=1+Math.floor(rng()*2); for(let k=0;k<n;k++) NOTES.push({cat,day:d, week:Math.ceil(d/7)}); });
+}
+
+/* ===== derive graph (deterministic) ===== */
+let mode='day';
+function buildGraph(){
+  const counts={}, nodesByCat={};
+  NOTES.forEach(n=>counts[n.cat]=(counts[n.cat]||0)+1);
+  const cats=Object.keys(counts);
+  const nodes=cats.map(cat=>({id:cat,cat,count:counts[cat],color:CAT[cat].c,name:CAT[cat].name}));
+  nodes.forEach((n,i)=>nodesByCat[n.id]=i);
+
+  // co-occurrence: count buckets (day or week) where both categories appear
+  const key=n=> mode==='day'? n.day : n.week;
+  const bucketCats={};
+  NOTES.forEach(n=>{const b=key(n);(bucketCats[b]=bucketCats[b]||new Set()).add(n.cat);});
+  const pairCount={};
+  Object.values(bucketCats).forEach(set=>{
+    const arr=[...set];
+    for(let i=0;i<arr.length;i++)for(let j=i+1;j<arr.length;j++){
+      const k=[arr[i],arr[j]].sort().join('|');pairCount[k]=(pairCount[k]||0)+1;
+    }
+  });
+  const edges=Object.keys(pairCount).map(k=>{const [a,b]=k.split('|');return {a:nodesByCat[a],b:nodesByCat[b],w:pairCount[k],ca:a,cb:b};});
+
+  // top partners per node (for tooltip)
+  nodes.forEach(n=>{n.partners=[];});
+  edges.forEach(e=>{nodes[e.a].partners.push({c:e.cb,w:e.w});nodes[e.b].partners.push({c:e.ca,w:e.w});});
+  nodes.forEach(n=>n.partners.sort((x,y)=>y.w-x.w));
+
+  // sizing
+  const maxC=Math.max(...nodes.map(n=>n.count));
+  nodes.forEach(n=>n.r=18+Math.sqrt(n.count/maxC)*34);
+  return {nodes,edges};
+}
+
+/* ===== render + force sim ===== */
+const SVGNS="http://www.w3.org/2000/svg";
+const svg=document.getElementById('svg'),tip=document.getElementById('tip');
+const W=820,H=560;
+let nodes=[],edges=[],edgeEls=[],nodeEls=[],raf=null,dragging=false;
+
+function setMode(m){mode=m;document.getElementById('tDay').classList.toggle('on',m==='day');document.getElementById('tWeek').classList.toggle('on',m==='week');render();renderLegend();renderCaption();}
+
+function render(){
+  cancelAnimationFrame(raf);
+  const g=buildGraph();nodes=g.nodes;edges=g.edges;
+  svg.innerHTML='';edgeEls=[];nodeEls=[];
+  nodes.forEach((n,i)=>{const a=i/nodes.length*Math.PI*2;n.x=W/2+Math.cos(a)*150+rng()*10;n.y=H/2+Math.sin(a)*120+rng()*10;n.vx=0;n.vy=0;});
+
+  const maxW=Math.max(...edges.map(e=>e.w),1);
+  const gE=document.createElementNS(SVGNS,'g');
+  edges.forEach(e=>{
+    const ln=document.createElementNS(SVGNS,'line');
+    ln.setAttribute('stroke','#5C6E4A');
+    ln.setAttribute('stroke-width',(1.4+ (e.w/maxW)*9).toFixed(1));
+    ln.setAttribute('stroke-opacity',(0.16+ (e.w/maxW)*0.34).toFixed(2));
+    ln.setAttribute('stroke-linecap','round');
+    gE.appendChild(ln);edgeEls.push(ln);
+  });
+  svg.appendChild(gE);
+
+  const gN=document.createElementNS(SVGNS,'g');
+  nodes.forEach((n,i)=>{
+    const grp=document.createElementNS(SVGNS,'g');grp.style.cursor='grab';
+    const c=document.createElementNS(SVGNS,'circle');
+    c.setAttribute('r',n.r);c.setAttribute('fill',n.color);c.setAttribute('stroke','#fff');c.setAttribute('stroke-width','2.5');
+    grp.appendChild(c);
+    const num=document.createElementNS(SVGNS,'text');
+    num.setAttribute('text-anchor','middle');num.setAttribute('dy','0.02em');num.setAttribute('dominant-baseline','central');
+    num.setAttribute('fill','#fff');num.setAttribute('font-family','Fraunces, serif');
+    num.setAttribute('font-size',Math.max(15,n.r*0.62));num.setAttribute('font-weight','500');
+    num.textContent=n.count;grp.appendChild(num);
+    const lbl=document.createElementNS(SVGNS,'text');
+    lbl.setAttribute('text-anchor','middle');lbl.setAttribute('dy',n.r+17);
+    lbl.setAttribute('fill','#1B1E19');lbl.setAttribute('font-family','Hanken Grotesk, sans-serif');
+    lbl.setAttribute('font-size','13');lbl.setAttribute('font-weight','600');
+    lbl.textContent=n.name;grp.appendChild(lbl);
+    gN.appendChild(grp);nodeEls.push(grp);
+    enableDrag(grp,n);
+    grp.addEventListener('pointerenter',ev=>showTip(ev,n));
+    grp.addEventListener('pointermove',moveTip);
+    grp.addEventListener('pointerleave',hideTip);
+  });
+  svg.appendChild(gN);
+  renderStats();
+  simulate(260);
+}
+
+function paint(){
+  edges.forEach((e,i)=>{const a=nodes[e.a],b=nodes[e.b],l=edgeEls[i];l.setAttribute('x1',a.x);l.setAttribute('y1',a.y);l.setAttribute('x2',b.x);l.setAttribute('y2',b.y);});
+  nodes.forEach((n,i)=>nodeEls[i].setAttribute('transform',`translate(${n.x},${n.y})`));
+}
+
+function simulate(ticks){
+  let count=0;
+  function step(){
+    // repulsion
+    for(let i=0;i<nodes.length;i++){const ni=nodes[i];if(ni.fixed)continue;
+      for(let j=0;j<nodes.length;j++){if(i===j)continue;const nj=nodes[j];
+        let dx=ni.x-nj.x,dy=ni.y-nj.y,d2=dx*dx+dy*dy||0.01,d=Math.sqrt(d2);
+        const rep=3200/d2;ni.vx+=dx/d*rep;ni.vy+=dy/d*rep;}}
+    // springs (rest length scales with radii so big bubbles sit apart)
+    edges.forEach(e=>{const a=nodes[e.a],b=nodes[e.b];let dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy)||0.01;
+      const rest=a.r+b.r+46;const f=(d-rest)*0.02;const fx=dx/d*f,fy=dy/d*f;
+      if(!a.fixed){a.vx+=fx;a.vy+=fy;}if(!b.fixed){b.vx-=fx;b.vy-=fy;}});
+    // collision
+    for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+      const a=nodes[i],b=nodes[j];let dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy)||0.01;
+      const min=a.r+b.r+10;if(d<min){const push=(min-d)/2;const ux=dx/d,uy=dy/d;
+        if(!a.fixed){a.x-=ux*push;a.y-=uy*push;}if(!b.fixed){b.x+=ux*push;b.y+=uy*push;}}}
+    // gravity + integrate
+    nodes.forEach(n=>{if(n.fixed)return;n.vx+=(W/2-n.x)*0.0022;n.vy+=(H/2-n.y)*0.0022;
+      n.vx*=0.85;n.vy*=0.85;n.x+=n.vx;n.y+=n.vy;
+      n.x=Math.max(n.r+14,Math.min(W-n.r-14,n.x));n.y=Math.max(n.r+14,Math.min(H-n.r-28,n.y));});
+    paint();count++;
+    if(count<ticks||dragging)raf=requestAnimationFrame(step);
+  }
+  raf=requestAnimationFrame(step);
+}
+
+function enableDrag(grp,n){
+  grp.addEventListener('pointerdown',e=>{e.stopPropagation();dragging=true;n.fixed=true;grp.setPointerCapture(e.pointerId);
+    const move=ev=>{const p=toSvg(ev);n.x=p.x;n.y=p.y;paint();};
+    const up=ev=>{dragging=false;n.fixed=false;grp.releasePointerCapture(e.pointerId);window.removeEventListener('pointermove',move);window.removeEventListener('pointerup',up);simulate(120);};
+    window.addEventListener('pointermove',move);window.addEventListener('pointerup',up);});
+}
+function toSvg(ev){const r=svg.getBoundingClientRect();return {x:(ev.clientX-r.left)/r.width*W,y:(ev.clientY-r.top)/r.height*H};}
+
+function showTip(ev,n){
+  const days=new Set(NOTES.filter(x=>x.cat===n.id).map(x=>x.day)).size;
+  const top=n.partners.slice(0,2).map(p=>CAT[p.c].name).join(', ');
+  const unit=mode==='day'?'days':'weeks';
+  tip.innerHTML=`<b>${n.name}</b> — ${n.count} notes<span class="tt-sub">across ${days} days${top?` · pairs with ${top}`:''}</span>`;
+  tip.style.opacity='1';moveTip(ev);
+}
+function moveTip(ev){const r=svg.parentElement.getBoundingClientRect();tip.style.left=(ev.clientX-r.left+14)+'px';tip.style.top=(ev.clientY-r.top+14)+'px';}
+function hideTip(){tip.style.opacity='0';}
+
+function renderStats(){
+  const totalNotes=NOTES.length;
+  const topics=nodes.length;
+  const strongest=edges.slice().sort((a,b)=>b.w-a.w)[0];
+  const pairTxt=strongest?`${CAT[strongest.ca].name} + ${CAT[strongest.cb].name}`:'—';
+  document.getElementById('stats').innerHTML=`
+    <div class="stat"><span class="v">${totalNotes}</span><span class="l">notes</span></div>
+    <div class="stat"><span class="v">${topics}</span><span class="l">topics</span></div>
+    <div class="stat"><span class="v">${DAYS}</span><span class="l">days</span></div>
+    <div class="stat"><span class="v" style="font-size:18px;line-height:1.3">${pairTxt}</span><span class="l">strongest pair</span></div>`;
+}
+function renderLegend(){
+  document.getElementById('legend').innerHTML=`
+    <span class="lg"><span class="b1"></span><span class="b2"></span>bubble size = total notes in that topic</span>
+    <span class="lg"><span style="width:26px;height:0;border-top:7px solid #5C6E4A;opacity:.5;display:inline-block;border-radius:4px"></span>thicker line = more ${mode==='day'?'shared days':'shared weeks'}</span>`;
+}
+function renderCaption(){
+  document.getElementById('caption').innerHTML= mode==='day'
+    ? `<b>Same-day view.</b> Two topics are linked when they appear on the <b>same day</b>; the more days they co-occur, the thicker the line. This surfaces how your curiosity clusters day to day — e.g. when you learn Science you often also log Health.`
+    : `<b>Same-week view.</b> Two topics are linked when they appear in the <b>same week</b>. Looser and more forgiving — fewer, broader connections that show which themes share a season rather than a single day.`;
+}
+
+setMode('day');
+</script>
+</body>
+</html>
