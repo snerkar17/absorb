@@ -5,14 +5,18 @@ export type Category = {
 }
 
 export const CATEGORIES: Category[] = [
-  { name: 'Science',          color: '#2563EB', tint: '#DBEAFE' },
-  { name: 'History',          color: '#B45309', tint: '#FEF3C7' },
-  { name: 'Psychology',       color: '#7C3AED', tint: '#EDE9FE' },
-  { name: 'Finance',          color: '#059669', tint: '#D1FAE5' },
-  { name: 'Tech News',        color: '#0891B2', tint: '#CFFAFE' },
-  { name: 'Computer Science', color: '#4F46E5', tint: '#E0E7FF' },
-  { name: 'Health/Wellness',  color: '#DC2626', tint: '#FEE2E2' },
-  { name: 'Other',            color: '#6B7280', tint: '#F3F4F6' },
+  { name: 'Science',          color: 'var(--cobalt-500)',    tint: 'var(--cobalt-100)' },
+  { name: 'History',          color: 'var(--tangerine-500)', tint: 'var(--tangerine-100)' },
+  { name: 'Psychology',       color: 'var(--violet-500)',    tint: 'var(--violet-100)' },
+  { name: 'Finance',          color: 'var(--magenta-500)',   tint: 'var(--magenta-100)' },
+  { name: 'Tech News',        color: 'var(--cobalt-300)',    tint: 'var(--cobalt-100)' },
+  { name: 'Computer Science', color: 'var(--tangerine-300)', tint: 'var(--tangerine-100)' },
+  { name: 'Health/Wellness',  color: 'var(--violet-300)',    tint: 'var(--violet-100)' },
+  { name: 'Other',            color: 'var(--magenta-300)',   tint: 'var(--magenta-100)' },
 ]
 
 export const CATEGORY_NAMES = CATEGORIES.map(c => c.name)
+
+export function getCategory(name: string): Category {
+  return CATEGORIES.find(c => c.name === name) ?? CATEGORIES[CATEGORIES.length - 1]
+}

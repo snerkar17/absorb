@@ -1,0 +1,46 @@
+/* ============================================================
+   Commonplace — Elevation, radii, borders, motion
+   Cards behave like clippings on a desk: small radii, soft warm
+   shadows tinted with ink (never cold grey), the occasional
+   letterpress inset.
+   ============================================================ */
+
+:root {
+  /* ---- Radii — restrained, paper-cut corners ---- */
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   10px;
+  --radius-xl:   16px;
+  --radius-pill: 999px;
+
+  /* ---- Borders ---- */
+  --border-thin:   1px solid var(--border-hairline);
+  --border-medium: 1.5px solid var(--border-rule);
+  --border-ink:    1.5px solid var(--border-strong);
+
+  /* ---- Shadows — warm ink, low & soft like stacked pages ---- */
+  --shadow-xs: 0 1px 0 rgba(25, 22, 15, 0.04);
+  --shadow-sm: 0 1px 2px rgba(25, 22, 15, 0.08), 0 1px 1px rgba(25, 22, 15, 0.05);
+  --shadow-md: 0 2px 4px rgba(25, 22, 15, 0.09), 0 4px 12px rgba(25, 22, 15, 0.08);
+  --shadow-lg: 0 6px 16px rgba(25, 22, 15, 0.11), 0 12px 32px rgba(25, 22, 15, 0.11);
+  --shadow-pop: 0 12px 28px rgba(25, 22, 15, 0.17), 0 24px 60px rgba(25, 22, 15, 0.15);
+
+  /* Letterpress — a pressed-into-the-page inset */
+  --shadow-press: inset 0 1px 2px rgba(25, 22, 15, 0.15);
+
+  /* The signature Y2K editorial device — a hard, offset ink block.
+     Use sparingly on a hero card / the pop. No blur. */
+  --shadow-hard:    4px 4px 0 var(--ink-900);
+  --shadow-hard-sm: 2px 2px 0 var(--ink-900);
+
+  /* ---- Motion — settle, don't bounce. Like paper laid down. ---- */
+  --ease-out:  cubic-bezier(0.22, 0.61, 0.36, 1); /* @kind other */
+  --ease-in:   cubic-bezier(0.55, 0.06, 0.68, 0.19); /* @kind other */
+  --ease-soft: cubic-bezier(0.33, 0.0, 0.2, 1); /* @kind other */
+  --dur-fast:  120ms; /* @kind other */
+  --dur-base:  200ms; /* @kind other */
+  --dur-slow:  340ms; /* @kind other */
+
+  --transition-base: all var(--dur-base) var(--ease-soft);
+}

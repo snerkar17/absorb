@@ -1,73 +1,240 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { CATEGORIES } from '@/lib/categories'
-import { getOrCreateToday, createNote } from '@/lib/data'
+import { getWeekDays, getDayCount } from '@/lib/data'
+import { getCategory } from '@/lib/categories'
+import { getWeekDates, getTodayString, getWeekNumber, formatWeekday, formatLongDate, dayOfMonth } from '@/lib/date'
+import Header from '@/components/Header'
 
-export default function CapturePage() {
-  const [text, setText] = useState('')
-  const [category, setCategory] = useState(CATEGORIES[0].name)
-  const [source, setSource] = useState('')
-  const [saved, setSaved] = useState(false)
-  const [error, setError] = useState('')
+type Note = { id: string; category: string }
+type Day = { id: string; date: string; notes: Note[] } | null
 
-  const handleSubmit = async () => {
-    setError('')
-    if (!text || !source) {
-      setError('Please fill in both the note and the source.')
-      return
-    }
+const kicker: React.CSSProperties = {
+  fontFamily: 'var(--font-mono)',
+  fontSize: 'var(--text-2xs)',
+  letterSpacing: 'var(--tracking-stamp)',
+  textTransform: 'uppercase',
+}
 
-    const day = await getOrCreateToday()
-    if (!day) {
-      setError('Could not create today. Try again.')
-      return
-    }
+export default function HomePage() {
+  const [weekDays, setWeekDays] = useState<Day[] | null>(null)
+  const [totalDays, setTotalDays] = useState(0)
 
-    const note = await createNote(day.id, text, category, source)
-    if (!note) {
-      setError('Could not save note. Try again.')
-      return
-    }
+  useEffect(() => {
+    Promise.all([getWeekDays(), getDayCount()]).then(([days, count]) => {
+      setWeekDays(days as Day[])
+      setTotalDays(count)
+    })
+  }, [])
 
-    setText('')
-    setSource('')
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+  if (!weekDays) {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ ...kicker, color: 'var(--text-muted)' }}>Loading…</p>
+      </div>
+    )
   }
 
+  const dates = getWeekDates()
+  const todayStr = getTodayString()
+  const todayIndex = dates.indexOf(todayStr)
+  const todayLogged = weekDays[todayIndex] !== null
+  const dayN = todayLogged ? totalDays : totalDays + 1
+  const daysLoggedThisWeek = weekDays.filter((d) => d !== null).length
+  const unlocked = daysLoggedThisWeek >= 7
+  const weekNumber = getWeekNumber(todayStr)
+
   return (
-    <div>
-      <h1>What did you learn today?</h1>
+    <div style={{ maxWidth: 1060, margin: '0 auto', padding: '0 28px 80px' }}>
+      <Header weekNumber={weekNumber} daysLoggedThisWeek={daysLoggedThisWeek} />
 
-      <textarea
-        placeholder="Write your note here..."
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
+      <div style={{ padding: '36px 0 32px' }}>
+        <div style={{ ...kicker, color: 'var(--accent-strong)', marginBottom: 10 }}>
+          {formatLongDate(todayStr)}
+        </div>
+        <h1 style={{
+          fontFamily: 'var(--font-serif)',
+          fontWeight: 'var(--weight-medium)',
+          fontSize: 'clamp(32px, 5vw, 52px)',
+          letterSpacing: 'var(--tracking-tight)',
+          color: 'var(--text-primary)',
+          marginBottom: 10,
+        }}>
+          Welcome back. Day {dayN} is open.
+        </h1>
+        <p style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-base)', color: 'var(--text-secondary)' }}>
+          {daysLoggedThisWeek} of 7 days logged this week.
+        </p>
+      </div>
 
-      <select
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-      >
-        {CATEGORIES.map((c) => (
-          <option key={c.name} value={c.name}>{c.name}</option>
-        ))}
-      </select>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 12 }}>
+        {dates.map((date, i) => {
+          const day = weekDays[i]
+          const isToday = date === todayStr
+          const logged = day !== null
+          const clickable = logged || isToday
 
-      <input
-        type="text"
-        placeholder="Source (book, video, article...)"
-        value={source}
-        onChange={(e) => setSource(e.target.value)}
-      />
+          const cardStyle: React.CSSProperties = {
+            position: 'relative',
+            borderRadius: 'var(--radius-lg)',
+            padding: '14px 12px',
+            minHeight: 120,
+            display: 'flex',
+            flexDirection: 'column',
+            textDecoration: 'none',
+            background: clickable ? 'var(--surface-card)' : 'transparent',
+            border: isToday
+              ? '1.5px solid var(--border-strong)'
+              : logged
+                ? 'var(--border-thin)'
+                : '1px dashed var(--border-hairline)',
+          }
 
-      <button onClick={handleSubmit}>Save note</button>
-      <Link href="/shelf">View shelf</Link>
+          const inner = (
+            <>
+              {isToday && (
+                <span style={{
+                  position: 'absolute',
+                  top: -9,
+                  right: 10,
+                  background: 'var(--accent)',
+                  color: 'var(--accent-onaccent)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 'var(--text-2xs)',
+                  letterSpacing: 'var(--tracking-stamp)',
+                  textTransform: 'uppercase',
+                  borderRadius: 'var(--radius-pill)',
+                  padding: '2px 8px',
+                }}>
+                  Today
+                </span>
+              )}
+              <div style={{ ...kicker, color: logged ? 'var(--text-muted)' : 'var(--text-faint)' }}>
+                {formatWeekday(date)}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-serif)',
+                fontSize: 34,
+                color: logged ? 'var(--text-primary)' : 'var(--text-faint)',
+                margin: '4px 0 8px',
+              }}>
+                {dayOfMonth(date)}
+              </div>
+              {logged ? (
+                <>
+                  <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
+                    {[...new Set(day!.notes.map((n) => n.category))].map((cat) => (
+                      <span key={cat} style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: '50%',
+                        background: getCategory(cat).color,
+                        display: 'inline-block',
+                      }} />
+                    ))}
+                  </div>
+                  <div style={{ ...kicker, color: 'var(--text-muted)', marginTop: 'auto' }}>
+                    {day!.notes.length} {day!.notes.length === 1 ? 'Note' : 'Notes'}
+                  </div>
+                </>
+              ) : isToday ? (
+                <div style={{ ...kicker, color: 'var(--accent-strong)', marginTop: 'auto' }}>
+                  + Add Notes
+                </div>
+              ) : (
+                <div style={{ ...kicker, color: 'var(--text-faint)', marginTop: 'auto' }}>
+                  Not Yet
+                </div>
+              )}
+            </>
+          )
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {saved && <p style={{ color: 'green' }}>Note saved!</p>}
+          return clickable ? (
+            <Link key={date} href={`/day/${date}`} className="cp-hover-lift" style={cardStyle}>
+              {inner}
+            </Link>
+          ) : (
+            <div key={date} style={cardStyle}>
+              {inner}
+            </div>
+          )
+        })}
+      </div>
+
+      <div style={{ textAlign: 'center', marginTop: 20 }}>
+        <Link href="/calendar" style={{
+          fontFamily: 'var(--font-sans)',
+          fontSize: 'var(--text-sm)',
+          color: 'var(--text-muted)',
+        }}>
+          Browse past notes in the calendar →
+        </Link>
+      </div>
+
+      {unlocked ? (
+        <div style={{
+          background: 'var(--surface-inverse)',
+          borderRadius: 'var(--radius-lg)',
+          padding: 32,
+          marginTop: 32,
+          textAlign: 'center',
+        }}>
+          <div style={{ ...kicker, color: 'var(--accent)' }}>Knowledge Graph · Unlocked</div>
+          <p style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: 'var(--text-lg)',
+            color: 'var(--text-onaccent)',
+            margin: '10px 0 20px',
+          }}>
+            Every day this week is mapped and ready to explore.
+          </p>
+          <Link href="/graph" style={{
+            display: 'inline-block',
+            background: 'var(--accent)',
+            color: 'var(--accent-onaccent)',
+            fontFamily: 'var(--font-sans)',
+            fontWeight: 'var(--weight-semibold)',
+            fontSize: 'var(--text-base)',
+            padding: '12px 26px',
+            borderRadius: 'var(--radius-md)',
+            textDecoration: 'none',
+          }}>
+            Open your knowledge graph
+          </Link>
+        </div>
+      ) : (
+        <div style={{
+          background: 'var(--surface-sunken)',
+          border: '1px dashed var(--border-rule)',
+          borderRadius: 'var(--radius-lg)',
+          padding: 32,
+          marginTop: 32,
+          textAlign: 'center',
+        }}>
+          <div style={{ ...kicker, color: 'var(--text-muted)' }}>Knowledge Graph · Locked</div>
+          <p style={{
+            fontFamily: 'var(--font-serif)',
+            fontSize: 'var(--text-lg)',
+            color: 'var(--text-primary)',
+            margin: '10px 0 18px',
+          }}>
+            Add notes for {7 - daysLoggedThisWeek} more {7 - daysLoggedThisWeek === 1 ? 'day' : 'days'} and your week gets mapped.
+          </p>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 14 }}>
+            {Array.from({ length: 7 }).map((_, i) => (
+              <span key={i} style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: i < daysLoggedThisWeek ? 'var(--accent)' : 'transparent',
+                border: '1px solid var(--border-rule)',
+              }} />
+            ))}
+          </div>
+          <div style={{ ...kicker, color: 'var(--text-faint)' }}>Unlocks At 7 Days</div>
+        </div>
+      )}
     </div>
   )
 }
