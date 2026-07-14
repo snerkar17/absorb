@@ -69,6 +69,30 @@ export async function getDayCount(): Promise<number> {
   return count ?? 0
 }
 
+export async function getMonthDays(year: number, month: number) {
+  const start = `${year}-${String(month).padStart(2, '0')}-01`
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate()
+  const end = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
+
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('days')
+    .select('*, notes(id, category)')
+    .gte('date', start)
+    .lte('date', end)
+
+  return data ?? []
+}
+
+export async function getAllNotes() {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('notes')
+    .select('id, category, days(date)')
+
+  return data ?? []
+}
+
 export async function getWeekDays() {
   const supabase = createClient()
   const dates = getWeekDates()
