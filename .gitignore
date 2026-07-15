@@ -45,3 +45,5 @@ CLAUDE.md
 PHASES.md
 absorb-prd.md
 
+node_modules
+.next/
