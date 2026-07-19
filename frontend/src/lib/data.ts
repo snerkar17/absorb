@@ -49,12 +49,37 @@ export async function getDayRank(date: string): Promise<number> {
 
 export async function createNote(dayId: string, text: string, category: string, source: string) {
   const supabase = createClient()
+  // inserting a brand new row --> needs to get user id from somewhere
   const { data: { user } } = await supabase.auth.getUser()
   const userId = user!.id
 
   const { data } = await supabase
     .from('notes')
     .insert({ day_id: dayId, text, category, source, user_id: userId })
+    .select()
+    .single()
+
+  return data
+}
+export async function deleteNote(noteId: string) {
+  const supabase = createClient()
+  // we are acting on a row that already exists
+  const { data } = await supabase
+    .from('notes')
+    .delete()
+    .eq('id', noteId)
+    .select()
+    .single()
+
+  return data
+}
+
+export async function updateNote(noteId: string, text: string, category: string, source: string) {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('notes')
+    .update({ text, category, source })
+    .eq('id', noteId)
     .select()
     .single()
 

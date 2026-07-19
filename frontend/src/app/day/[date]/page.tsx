@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { getDayByDate, getOrCreateDay, createNote, getDayRank } from '@/lib/data'
+import { getDayByDate, getOrCreateDay, createNote, updateNote, deleteNote, getDayRank } from '@/lib/data'
 import { CATEGORIES, getCategory } from '@/lib/categories'
 import { formatWeekdayLong, formatMonthDay, formatTime } from '@/lib/date'
 import Header from '@/components/Header'
@@ -25,6 +25,7 @@ export default function DayBoardPage() {
   const [rank, setRank] = useState(1)
   const [flipped, setFlipped] = useState<Record<string, boolean>>({})
   const [showAdd, setShowAdd] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const [text, setText] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0].name)
@@ -57,6 +58,43 @@ export default function DayBoardPage() {
     setCategory(CATEGORIES[0].name)
     setSaving(false)
     setShowAdd(false)
+  }
+
+  const handleStartEdit = (e: React.MouseEvent, note: Note) => {
+    e.stopPropagation()
+    setShowAdd(false)
+    setEditingId(note.id)
+    setText(note.text)
+    setCategory(note.category)
+    setSource(note.source)
+    setError('')
+  }
+
+  const handleUpdateNote = async () => {
+    if (!editingId) return
+    setError('')
+    if (!text || !source) {
+      setError('Please fill in both the note and the source.')
+      return
+    }
+    setSaving(true)
+    const updated = await updateNote(editingId, text, category, source)
+    if (!updated) { setError('Could not save note. Try again.'); setSaving(false); return }
+
+    setDay((prev) => prev ? { ...prev, notes: prev.notes.map((n) => n.id === updated.id ? updated : n) } : prev)
+    setText('')
+    setSource('')
+    setCategory(CATEGORIES[0].name)
+    setSaving(false)
+    setEditingId(null)
+  }
+
+  const handleDeleteNote = async (e: React.MouseEvent, noteId: string) => {
+    e.stopPropagation()
+    if (!window.confirm('Delete this note?')) return
+    const deleted = await deleteNote(noteId)
+    if (!deleted) return
+    setDay((prev) => prev ? { ...prev, notes: prev.notes.filter((n) => n.id !== noteId) } : prev)
   }
 
   if (day === undefined) {
@@ -109,7 +147,10 @@ export default function DayBoardPage() {
           return (
             <div
               key={note.id}
-              onClick={() => setFlipped((prev) => ({ ...prev, [note.id]: !prev[note.id] }))}
+              onClick={() => {
+                if (editingId === note.id) return
+                setFlipped((prev) => ({ ...prev, [note.id]: !prev[note.id] }))
+              }}
               style={{
                 minHeight: 230,
                 borderRadius: 'var(--radius-md)',
@@ -123,7 +164,102 @@ export default function DayBoardPage() {
                 overflow: 'hidden',
               }}
             >
-              {isFlipped ? (
+              {editingId === note.id ? (
+                <div style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+                  <textarea
+                    autoFocus
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    style={{
+                      flex: 1,
+                      border: 'var(--border-thin)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: 8,
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 'var(--text-sm)',
+                      background: 'var(--surface-card)',
+                      color: 'var(--text-primary)',
+                      resize: 'vertical',
+                      outline: 'none',
+                    }}
+                  />
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {CATEGORIES.map((c) => {
+                      const isOn = category === c.name
+                      return (
+                        <button
+                          key={c.name}
+                          onClick={() => setCategory(c.name)}
+                          style={{
+                            border: isOn ? 'none' : 'var(--border-thin)',
+                            background: isOn ? c.color : 'var(--surface-card)',
+                            color: isOn ? 'var(--surface-raised)' : 'var(--text-muted)',
+                            borderRadius: 'var(--radius-pill)',
+                            padding: '4px 9px',
+                            fontFamily: 'var(--font-sans)',
+                            fontSize: 'var(--text-2xs)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {c.name}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <input
+                    type="text"
+                    value={source}
+                    onChange={(e) => setSource(e.target.value)}
+                    style={{
+                      border: 'var(--border-thin)',
+                      borderRadius: 'var(--radius-md)',
+                      padding: '8px 10px',
+                      fontFamily: 'var(--font-sans)',
+                      fontSize: 'var(--text-sm)',
+                      background: 'var(--surface-card)',
+                      color: 'var(--text-primary)',
+                      outline: 'none',
+                    }}
+                  />
+                  {error && <p style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-xs)', color: 'var(--critical)' }}>{error}</p>}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={handleUpdateNote}
+                      disabled={saving || !text || !source}
+                      style={{
+                        flex: 1,
+                        background: 'var(--accent)',
+                        color: 'var(--accent-onaccent)',
+                        fontFamily: 'var(--font-sans)',
+                        fontWeight: 'var(--weight-semibold)',
+                        fontSize: 'var(--text-xs)',
+                        padding: 8,
+                        borderRadius: 'var(--radius-md)',
+                        border: 'none',
+                        cursor: saving ? 'not-allowed' : 'pointer',
+                        opacity: (!text || !source) ? 0.5 : 1,
+                      }}
+                    >
+                      {saving ? 'Saving…' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => { setEditingId(null); setError('') }}
+                      style={{
+                        background: 'none',
+                        border: 'var(--border-thin)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '8px 12px',
+                        fontFamily: 'var(--font-sans)',
+                        fontSize: 'var(--text-xs)',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : isFlipped ? (
                 <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
                   <div>
                     <div style={{ ...kicker, color: 'var(--text-muted)', marginBottom: 4 }}>Source</div>
@@ -157,7 +293,35 @@ export default function DayBoardPage() {
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px', borderTop: 'var(--border-thin)' }}>
                     <span style={{ ...kicker, color: 'var(--text-muted)' }}>From · {note.source}</span>
-                    <span style={{ color: 'var(--text-faint)' }}>↻</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <button
+                        onClick={(e) => handleStartEdit(e, note)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          color: 'var(--text-muted)',
+                        }}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteNote(e, note.id)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          cursor: 'pointer',
+                          fontSize: 14,
+                          color: 'var(--critical)',
+                        }}
+                      >
+                        🗑
+                      </button>
+                      <span style={{ color: 'var(--text-faint)' }}>↻</span>
+                    </div>
                   </div>
                 </>
               )}
@@ -255,6 +419,7 @@ export default function DayBoardPage() {
               >
                 {saving ? 'Saving…' : 'Save note'}
               </button>
+              
               <button
                 onClick={() => { setShowAdd(false); setError('') }}
                 style={{
@@ -274,7 +439,7 @@ export default function DayBoardPage() {
           </div>
         ) : (
           <button
-            onClick={() => setShowAdd(true)}
+            onClick={() => { setEditingId(null); setShowAdd(true) }}
             className="cp-add-card"
             style={{
               minHeight: 230,

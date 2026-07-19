@@ -66,7 +66,7 @@ A source is not a stored entity; it's derived by normalizing note `source` strin
 - **FR-2** Each note must be assigned exactly one category from the fixed category set.
 - **FR-3** Each note must record a source as free text.
 - **FR-4** The user can add multiple notes to the current day in one session.
-- **FR-5** The user can edit or delete a note while the day is still a draft.
+- **FR-5** The user can edit or delete a note at any time.
 - **FR-6** The user can finalize the day; finalized days appear on the shelf and become read-only.
 - **FR-7** A note cannot be saved unless text, category, and source are all present.
 

@@ -1,9 +1,11 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
+  // build a connection to supabase that can read this speciifc request's
+  // cookies
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -20,7 +22,9 @@ export async function middleware(request: NextRequest) {
       },
     }
   )
-
+  // ask who does this id card belong to
+  // takes the cookie snd sends to supabase servers and supaabase
+  // verfies it its a rela valid session
   const { data: { user } } = await supabase.auth.getUser()
 
   const isPublicPath =
