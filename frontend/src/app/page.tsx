@@ -45,6 +45,8 @@ export default function HomePage() {
   const daysLoggedThisWeek = weekDays.filter((d) => d !== null).length
   const unlocked = totalDays >= 7
   const weekNumber = getWeekNumber(todayStr)
+  // need number of days with notes > 0
+  const daysWithNotes = weekDays.filter((d) => d !== null && d.notes.length > 0).length
 
   return (
     <div style={{ maxWidth: 1060, margin: '0 auto', padding: '0 28px 80px' }}>
@@ -65,7 +67,7 @@ export default function HomePage() {
           Welcome back. Day {dayN} is open.
         </h1>
         <p style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-base)', color: 'var(--text-secondary)' }}>
-          {daysLoggedThisWeek} of 7 days logged this week.
+          {daysWithNotes} of 7 days logged this week.
         </p>
       </div>
 

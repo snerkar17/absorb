@@ -67,6 +67,7 @@ function CalendarContent() {
 
   const grid = getMonthGrid(year, month)
   const todayStr = getTodayString()
+  const daysWithNotes = days.filter((d) => d.notes.length > 0).length
 
   return (
     <div style={{ maxWidth: 1060, margin: '0 auto', padding: '0 28px 80px' }}>
@@ -75,7 +76,7 @@ function CalendarContent() {
       <div style={{ padding: '28px 0 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
         <div>
           <div style={{ ...kicker, color: 'var(--text-muted)', marginBottom: 8 }}>
-            Calendar · {days.length} {days.length === 1 ? 'Day' : 'Days'} Logged This Month
+            Calendar · {daysWithNotes} {daysWithNotes === 1 ? 'Day' : 'Days'} Logged This Month
           </div>
           <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 'var(--weight-medium)', fontSize: 40, color: 'var(--text-primary)' }}>
             {formatMonthYear(year, month)}
