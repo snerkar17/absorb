@@ -51,8 +51,9 @@ export default function GraphPage() {
 
   // Pure computation derived from rawNotes/totalDays — belongs in useMemo,
   // not an effect+setState, since nothing external needs to be synchronized.
+  // totalDays comes from getDayCount() --> count of rows in day table
   const { nodes: baseNodes, edges: baseEdges } = useMemo(() => {
-    if (totalDays === undefined || totalDays < 7) return { nodes: [] as SimNode[], edges: [] as SimLink[] }
+    if (rawNotes.length < 7) return { nodes: [] as SimNode[], edges: [] as SimLink[] }
 
     const { nodes: graphNodes, edges: graphEdges } = buildGraph(rawNotes)
     if (graphNodes.length === 0) return { nodes: [] as SimNode[], edges: [] as SimLink[] }
@@ -142,7 +143,7 @@ export default function GraphPage() {
 
       <div style={{ padding: '28px 0 20px' }}>
         <div style={{ ...kicker, color: 'var(--accent-strong)', marginBottom: 10 }}>
-          Knowledge Graph · {totalDays} Days Mapped
+          Knowledge Graph · {rawNotes.length} Days Mapped
         </div>
         <h1 style={{ fontFamily: 'var(--font-serif)', fontWeight: 'var(--weight-medium)', fontSize: 'clamp(28px, 4vw, 40px)', color: 'var(--text-primary)', marginBottom: 8 }}>
           What your mind keeps circling
@@ -152,8 +153,8 @@ export default function GraphPage() {
         </p>
       </div>
 
-      {totalDays < 7 ? (
-        <GraphLockedPanel daysLogged={totalDays} />
+      {rawNotes.length < 7 ? (
+        <GraphLockedPanel notesLogged={rawNotes.length} />
       ) : (
         <>
           <div style={{

@@ -6,11 +6,11 @@ const kicker: React.CSSProperties = {
 }
 
 type Props = {
-  daysLogged: number
+  notesLogged: number
 }
 
-export default function GraphLockedPanel({ daysLogged }: Props) {
-  const remaining = Math.max(7 - daysLogged, 0)
+export default function GraphLockedPanel({ notesLogged }: Props) {
+  const remaining = Math.max(7 - notesLogged, 0)
 
   return (
     <div style={{
@@ -27,7 +27,7 @@ export default function GraphLockedPanel({ daysLogged }: Props) {
         color: 'var(--text-primary)',
         margin: '10px 0 18px',
       }}>
-        Add notes for {remaining} more {remaining === 1 ? 'day' : 'days'} and your knowledge graph unlocks.
+        Add notes for {remaining} more {remaining === 1 ? 'note' : 'notes'} and your knowledge graph unlocks.
       </p>
       <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginBottom: 14 }}>
         {Array.from({ length: 7 }).map((_, i) => (
@@ -35,12 +35,12 @@ export default function GraphLockedPanel({ daysLogged }: Props) {
             width: 8,
             height: 8,
             borderRadius: '50%',
-            background: i < daysLogged ? 'var(--accent)' : 'transparent',
+            background: i < notesLogged ? 'var(--accent)' : 'transparent',
             border: '1px solid var(--border-rule)',
           }} />
         ))}
       </div>
-      <div style={{ ...kicker, color: 'var(--text-faint)' }}>Unlocks At 7 Days</div>
+      <div style={{ ...kicker, color: 'var(--text-faint)' }}>Unlocks At 7 Notes</div>
     </div>
   )
 }
