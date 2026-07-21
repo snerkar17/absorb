@@ -103,7 +103,8 @@ function CalendarContent() {
 
           const day = days.find((d) => d.date === date)
           const isToday = date === todayStr
-          const logged = !!day
+          // check if the day exists and if the day has notes logged --> should not be clickable 
+          const logged = day && day.notes.length > 0
           const clickable = logged || isToday
 
           const cellStyle: React.CSSProperties = {
