@@ -2,12 +2,21 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { getDayByDate, getOrCreateDay, createNote, updateNote, deleteNote, getDayRank } from '@/lib/data'
+import { getDayByDate, getOrCreateDay, createNote, updateNote, deleteNote, getDayRank, fetchAndCachePreviewImage } from '@/lib/data'
 import { CATEGORIES, getCategory } from '@/lib/categories'
 import { formatWeekdayLong, formatMonthDay, formatTime } from '@/lib/date'
 import Header from '@/components/Header'
 
-type Note = { id: string; text: string; category: string; source: string; created_at: string }
+type Note = { id: string; text: string; category: string; source: string; url: string | null; created_at: string }
+
+function isValidUrl(value: string): boolean {
+  try {
+    new URL(value)
+    return true
+  } catch {
+    return false
+  }
+}
 type DayData = { id: string; notes: Note[] } | null
 
 const kicker: React.CSSProperties = {
@@ -30,6 +39,7 @@ export default function DayBoardPage() {
   const [text, setText] = useState('')
   const [category, setCategory] = useState(CATEGORIES[0].name)
   const [source, setSource] = useState('')
+  const [url, setUrl] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -46,15 +56,21 @@ export default function DayBoardPage() {
       setError('Please fill in both the note and the source.')
       return
     }
+    if (url && !isValidUrl(url)) {
+      setError('That link doesn\'t look like a valid URL (include https://).')
+      return
+    }
     setSaving(true)
     const d = await getOrCreateDay(date)
     if (!d) { setError('Could not open this day. Try again.'); setSaving(false); return }
-    const note = await createNote(d.id, text, category, source)
+    const note = await createNote(d.id, text, category, source, url || null)
     if (!note) { setError('Could not save note. Try again.'); setSaving(false); return }
+    if (note.url) fetchAndCachePreviewImage(note.id, note.url)
 
     setDay((prev) => prev ? { ...prev, notes: [...prev.notes, note] } : { id: d.id, notes: [note] })
     setText('')
     setSource('')
+    setUrl('')
     setCategory(CATEGORIES[0].name)
     setSaving(false)
     setShowAdd(false)
@@ -67,6 +83,7 @@ export default function DayBoardPage() {
     setText(note.text)
     setCategory(note.category)
     setSource(note.source)
+    setUrl(note.url ?? '')
     setError('')
   }
 
@@ -77,13 +94,20 @@ export default function DayBoardPage() {
       setError('Please fill in both the note and the source.')
       return
     }
+    if (url && !isValidUrl(url)) {
+      setError('That link doesn\'t look like a valid URL (include https://).')
+      return
+    }
+    const original = day?.notes.find((n) => n.id === editingId)
     setSaving(true)
-    const updated = await updateNote(editingId, text, category, source)
+    const updated = await updateNote(editingId, text, category, source, url || null)
     if (!updated) { setError('Could not save note. Try again.'); setSaving(false); return }
+    if (updated.url && updated.url !== original?.url) fetchAndCachePreviewImage(updated.id, updated.url)
 
     setDay((prev) => prev ? { ...prev, notes: prev.notes.map((n) => n.id === updated.id ? updated : n) } : prev)
     setText('')
     setSource('')
+    setUrl('')
     setCategory(CATEGORIES[0].name)
     setSaving(false)
     setEditingId(null)
@@ -221,6 +245,26 @@ export default function DayBoardPage() {
                       outline: 'none',
                     }}
                   />
+                  <div>
+                    <div style={{ ...kicker, color: 'var(--text-muted)', marginBottom: 4 }}>Link (Optional)</div>
+                    <input
+                      type="text"
+                      placeholder="https://…"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      style={{
+                        width: '100%',
+                        border: 'var(--border-thin)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '8px 10px',
+                        fontFamily: 'var(--font-sans)',
+                        fontSize: 'var(--text-sm)',
+                        background: 'var(--surface-card)',
+                        color: 'var(--text-primary)',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
                   {error && <p style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-xs)', color: 'var(--critical)' }}>{error}</p>}
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button
@@ -243,7 +287,7 @@ export default function DayBoardPage() {
                       {saving ? 'Saving…' : 'Save'}
                     </button>
                     <button
-                      onClick={() => { setEditingId(null); setError('') }}
+                      onClick={() => { setEditingId(null); setUrl(''); setError('') }}
                       style={{
                         background: 'none',
                         border: 'var(--border-thin)',
@@ -266,6 +310,24 @@ export default function DayBoardPage() {
                     <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 18, color: 'var(--text-primary)' }}>
                       {note.source}
                     </div>
+                    {note.url && (
+                      <a
+                        href={note.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          display: 'inline-block',
+                          marginTop: 6,
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: 11,
+                          color: 'var(--lime-700)',
+                          textDecoration: 'underline',
+                        }}
+                      >
+                        Open the link ↗
+                      </a>
+                    )}
                   </div>
                   <div>
                     <div style={{ ...kicker, color: 'var(--text-muted)', marginBottom: 4 }}>Category</div>
@@ -398,6 +460,26 @@ export default function DayBoardPage() {
                 outline: 'none',
               }}
             />
+            <div>
+              <div style={{ ...kicker, color: 'var(--text-muted)', marginBottom: 4 }}>Link (Optional)</div>
+              <input
+                type="text"
+                placeholder="https://…"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                style={{
+                  width: '100%',
+                  border: 'var(--border-thin)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '10px 12px',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: 'var(--text-base)',
+                  background: 'var(--surface-card)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                }}
+              />
+            </div>
             {error && <p style={{ fontFamily: 'var(--font-sans)', fontSize: 'var(--text-sm)', color: 'var(--critical)' }}>{error}</p>}
             <div style={{ display: 'flex', gap: 8, marginTop: 'auto' }}>
               <button
@@ -421,7 +503,7 @@ export default function DayBoardPage() {
               </button>
               
               <button
-                onClick={() => { setShowAdd(false); setError('') }}
+                onClick={() => { setShowAdd(false); setUrl(''); setError('') }}
                 style={{
                   background: 'none',
                   border: 'var(--border-thin)',
@@ -439,7 +521,7 @@ export default function DayBoardPage() {
           </div>
         ) : (
           <button
-            onClick={() => { setEditingId(null); setShowAdd(true) }}
+            onClick={() => { setEditingId(null); setUrl(''); setShowAdd(true) }}
             className="cp-add-card"
             style={{
               minHeight: 230,

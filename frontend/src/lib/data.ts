@@ -30,7 +30,7 @@ export async function getDayByDate(date: string) {
 
   const { data } = await supabase
     .from('days')
-    .select('*, notes(id, text, category, source, created_at)')
+    .select('*, notes(id, text, category, source, url, created_at)')
     .eq('date', date)
     .order('created_at', { referencedTable: 'notes' })
     .maybeSingle()
@@ -47,7 +47,7 @@ export async function getDayRank(date: string): Promise<number> {
   return count ?? 0
 }
 
-export async function createNote(dayId: string, text: string, category: string, source: string) {
+export async function createNote(dayId: string, text: string, category: string, source: string, url: string | null = null) {
   const supabase = createClient()
   // inserting a brand new row --> needs to get user id from somewhere
   const { data: { user } } = await supabase.auth.getUser()
@@ -55,7 +55,7 @@ export async function createNote(dayId: string, text: string, category: string, 
 
   const { data } = await supabase
     .from('notes')
-    .insert({ day_id: dayId, text, category, source, user_id: userId })
+    .insert({ day_id: dayId, text, category, source, url, user_id: userId })
     .select()
     .single()
 
@@ -74,16 +74,32 @@ export async function deleteNote(noteId: string) {
   return data
 }
 
-export async function updateNote(noteId: string, text: string, category: string, source: string) {
+export async function updateNote(noteId: string, text: string, category: string, source: string, url: string | null = null) {
   const supabase = createClient()
   const { data } = await supabase
     .from('notes')
-    .update({ text, category, source })
+    .update({ text, category, source, url })
     .eq('id', noteId)
     .select()
     .single()
 
   return data
+}
+
+export async function fetchAndCachePreviewImage(noteId: string, url: string) {
+  try {
+    const res = await fetch(`/api/og-image?url=${encodeURIComponent(url)}`)
+    const { image } = await res.json()
+    if (!image) return
+
+    const supabase = createClient()
+    await supabase
+      .from('notes')
+      .update({ preview_image: image })
+      .eq('id', noteId)
+  } catch {
+    // best-effort cache; the letter fallback covers this on the references page
+  }
 }
 
 export async function getDayCount(): Promise<number> {
@@ -114,6 +130,17 @@ export async function getAllNotes() {
   const { data } = await supabase
     .from('notes')
     .select('id, category, days(date)')
+
+  return data ?? []
+}
+
+export async function getReferenceNotes() {
+  const supabase = createClient()
+  const { data } = await supabase
+    .from('notes')
+    .select('id, text, category, source, url, preview_image, created_at')
+    .not('url', 'is', null)
+    .order('created_at', { ascending: false })
 
   return data ?? []
 }

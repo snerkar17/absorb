@@ -165,13 +165,20 @@ export default function HomePage() {
         })}
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: 20 }}>
+      <div style={{ textAlign: 'center', marginTop: 20, display: 'flex', justifyContent: 'center', gap: 24 }}>
         <Link href="/calendar" style={{
           fontFamily: 'var(--font-sans)',
           fontSize: 'var(--text-sm)',
           color: 'var(--text-muted)',
         }}>
           Browse past notes in the calendar →
+        </Link>
+        <Link href="/references" style={{
+          fontFamily: 'var(--font-sans)',
+          fontSize: 'var(--text-sm)',
+          color: 'var(--text-muted)',
+        }}>
+          Your saved references →
         </Link>
       </div>
 

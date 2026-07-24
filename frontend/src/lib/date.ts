@@ -51,6 +51,10 @@ export function formatTime(isoTimestamp: string): string {
   return new Date(isoTimestamp).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
+export function formatShortDate(isoTimestamp: string): string {
+  return new Date(isoTimestamp).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
+}
+
 export function getCurrentYearMonth(): { year: number; month: number } {
   const [year, month] = getTodayString().split('-').map(Number)
   return { year, month }
