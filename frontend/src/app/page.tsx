@@ -215,7 +215,7 @@ export default function HomePage() {
         </div>
       ) : (
         <div style={{ marginTop: 32 }}>
-          <GraphLockedPanel daysLogged={totalDays} />
+          <GraphLockedPanel notesLogged={totalDays} />
         </div>
       )}
     </div>
