@@ -1,6 +1,5 @@
 # Absorb
 
-*Write it · tag it · map it.*
 
 We absorb content from all kinds of sources every day. What we keep coming back to says something about who we are — our thoughts, our interests, our opinions. Absorb is a small tool for noticing that pattern.
 
