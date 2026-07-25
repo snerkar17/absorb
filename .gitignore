@@ -47,3 +47,6 @@ absorb-prd.md
 
 node_modules
 .next/
+
+# any md files
+*.md
