@@ -41,12 +41,5 @@ yarn-error.log*
 next-env.d.ts
 
 # md files
-CLAUDE.md
-PHASES.md
-absorb-prd.md
-
-node_modules
-.next/
-
-# any md files
-/*.md
+*.md
+!README.md
