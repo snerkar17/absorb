@@ -1,9 +1,11 @@
 # Absorb
-
+https://abosrb-content.vercel.app/login
 
 We absorb content from all kinds of sources every day. What we keep coming back to says something about who we are — our thoughts, our interests, our opinions. Absorb is a small tool for noticing that pattern.
 
 Absorb is a personal web app for capturing what you learn each day. You write a note, tag it with a category, and record where it came from. Every day is its own page. After 7 days logged, a **knowledge graph** unlocks — a map connecting the topics you've been learning, built entirely from your own data.
+
+
 
 
 ---
